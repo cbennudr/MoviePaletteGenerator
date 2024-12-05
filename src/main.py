@@ -19,22 +19,25 @@ def create_pallete_img(colors:list, width:int, height:int) -> np.array:
 
     # Loop through the colors, create a strip for each, and add it to the pallete image
     subpallets = []
-    pallete = np.full((height,1,3), (255,255,255)) # create an initial empty strip to add on to
     with tqdm(total=len(colors), desc="Creating pallete image") as pbar:
-        for i, color in enumerate(colors):
+        i=1
+        for color in colors:
             cur_strip = np.full((height,width_of_each_strip,3), color)
-            pallete = np.hstack([pallete, cur_strip])
+            if i==1: pallete = cur_strip.copy() # on the first strip for a new subpalette, just set the palette to be the strip
+            else: pallete = np.hstack([pallete, cur_strip]) 
             # Every 500 iterations, start creating a new sub-pallete or else the hstack operation starts taking way too long
             if i % 500 == 0:
                 subpallets.append(pallete)
-                pallete = np.full((height,1,3), (255,255,255)) 
+                i=0
+            i+=1
             pbar.update(1)
+        if i!=1: subpallets.append(pallete) # if the number of frames was not a multiple of 500, we need to hstack the subpalette that was still being created
 
     print("Combining sub-pallets")
     pallete = np.hstack(subpallets)
 
 
-    return pallete[:,1:,:] # remove white strip from when the initial matrix was created
+    return pallete
 
 
 def create_pallete(video_dir:str, output_dir:str, output_filename:str, pallete_width:int, pallete_height:int, display_frames:bool, color_selection_method:str):
